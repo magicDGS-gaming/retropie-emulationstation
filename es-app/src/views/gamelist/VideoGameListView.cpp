@@ -1,13 +1,13 @@
 #include "views/gamelist/VideoGameListView.h"
 
 #include "animations/LambdaAnimation.h"
-#ifdef _RPI_
+#ifdef _OMX_
 #include "components/VideoPlayerComponent.h"
 #endif
 #include "components/VideoVlcComponent.h"
 #include "utils/FileSystemUtil.h"
 #include "views/ViewController.h"
-#ifdef _RPI_
+#ifdef _OMX_
 #include "Settings.h"
 #endif
 
@@ -30,7 +30,7 @@ VideoGameListView::VideoGameListView(Window* window, FileData* root) :
 	const float padding = 0.01f;
 
 	// Create the correct type of video window
-#ifdef _RPI_
+#ifdef _OMX_
 	Utils::FileSystem::removeFile(getTitlePath());
 	if (Settings::getInstance()->getBool("VideoOmxPlayer"))
 		mVideo = new VideoPlayerComponent(window, "");
@@ -265,10 +265,10 @@ void VideoGameListView::updateInfoPanel()
 		}
 		mVideoPlaying = true;
 
-		mVideo->setImage(file->getThumbnailPath());
-		mThumbnail.setImage(file->getThumbnailPath());
-		mMarquee.setImage(file->getMarqueePath());
-		mImage.setImage(file->getImagePath());
+		mVideo->setImageAsync(file->getThumbnailPath());
+		mThumbnail.setImageAsync(file->getThumbnailPath());
+		mMarquee.setImageAsync(file->getMarqueePath());
+		mImage.setImageAsync(file->getImagePath());
 
 		mDescription.setText(file->metadata.get("desc"));
 		mDescContainer.reset();

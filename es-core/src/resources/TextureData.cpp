@@ -13,7 +13,8 @@
 #define DPI 96
 
 TextureData::TextureData(bool tile) : mTile(tile), mTextureID(0), mDataRGBA(nullptr), mScalable(false),
-									  mWidth(0), mHeight(0), mSourceWidth(0.0f), mSourceHeight(0.0f)
+									  mWidth(0), mHeight(0), mSourceWidth(0.0f), mSourceHeight(0.0f), mLoadFailed(false),
+									  mBindGeneration(0)
 {
 }
 
@@ -49,6 +50,7 @@ bool TextureData::initSVGFromMemory(const unsigned char* fileData, size_t length
 	if (!svgImage || (svgImage->width == 0) || (svgImage->height == 0))
 	{
 		LOG(LogError) << "Error parsing SVG image.";
+		nsvgDelete(svgImage);
 		return false;
 	}
 
@@ -68,6 +70,7 @@ bool TextureData::initSVGFromMemory(const unsigned char* fileData, size_t length
 	float scale = Math::min(mHeight / svgImage->height, mWidth / svgImage->width);
 	nsvgRasterize(rast, svgImage, 0, 0, scale, dataRGBA, (int)mWidth, (int)mHeight, (int)mWidth * 4);
 	nsvgDeleteRasterizer(rast);
+	nsvgDelete(svgImage);
 
 	ImageIO::flipPixelsVert(dataRGBA, mWidth, mHeight);
 
@@ -134,15 +137,22 @@ bool TextureData::load()
 		else
 			retval = initImageFromMemory((const unsigned char*)data.ptr.get(), data.length);
 	}
+	if (!retval)
+	{
+		std::unique_lock<std::mutex> lock(mMutex);
+		mLoadFailed = true;
+	}
 	return retval;
 }
 
-bool TextureData::isLoaded()
+TextureData::LoadStatus TextureData::loadStatus()
 {
 	std::unique_lock<std::mutex> lock(mMutex);
 	if (mDataRGBA || (mTextureID != 0))
-		return true;
-	return false;
+		return LoadStatus::LOADED;
+	if (mLoadFailed)
+		return LoadStatus::FAILED;
+	return LoadStatus::LOADING;
 }
 
 bool TextureData::uploadAndBind()

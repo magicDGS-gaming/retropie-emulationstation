@@ -1,4 +1,4 @@
-#ifdef _RPI_
+#ifdef _OMX_
 #include "components/VideoPlayerComponent.h"
 
 #include "renderers/Renderer.h"
@@ -255,6 +255,7 @@ void VideoPlayerComponent::stopVideo()
 {
 	mIsPlaying = false;
 	mStartDelayed = false;
+	mPlayingVideoPath = "";
 
 	// Stop the player process
 	if (mPlayerPid != -1)
